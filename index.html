@@ -1,0 +1,104 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>CPU Simulator</title>
+    <link rel="stylesheet" href="index.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.10/vue.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <h1>CPU Simulator</h1>
+        <h3>Out</h3>
+        <p>7 Segment: {{seg.toString().padStart(4, '0')}}</p>
+        <h3>Control</h3>
+        <table>
+            <tr>
+                <td>Program Counter:</td>
+                <td>{{pc.toString(16).padStart(4, '0')}}</td>
+                <td>{{pc.toString(2).padStart(16, '0')}}</td>
+            </tr>
+            <tr>
+                <td>Counter:</td>
+                <td>&nbsp;</td>
+                <td>{{counter.toString(2).padStart(2, '0')}}</td>
+            </tr>
+            <tr>
+                <td>Instruction Register:</td>
+                <td>{{irM.toString(16).padStart(4, '0')}}{{irL.toString(16).padStart(4, '0')}}</td>
+                <td>{{irM.toString(2).padStart(16, '0')}} {{irL.toString(2).padStart(16, '0')}}</td>
+            </tr>
+            <tr>
+                <td>Control:</td>
+                <td colspan="2">
+                    <button @click="reset()">Reset</button>
+                    <button @click="next()" :disabled="auto">Next</button>
+                    <button @click="toggleAuto()">{{auto?'Manual':'Auto'}}</button>
+                </td>
+            </tr>
+        </table>
+        <h3>Register</h3>
+        <table cellspacing="0" cellpadding="6" class="reg-table">
+            <tr>
+                <th v-for="i in 16">r{{i-1}}</th>
+            </tr>
+            <tr>
+                <td v-for="i in 16" :class="{empty:reg[i-1]==0}">{{reg[i-1].toString(16).padStart(4, '0')}}</td>
+            </tr>
+            <tr>
+                <th v-for="i in 16">r{{i+15}}</th>
+            </tr>
+            <tr>
+                <td v-for="i in 16" :class="{empty:reg[i+15]==0}">{{reg[i+15].toString(16).padStart(4, '0')}}</td>
+            </tr>
+        </table>
+        <h3>Stack</h3>
+        <table cellspacing="0" cellpadding="6" class="stack-table">
+            <tr>
+                <td class="row-head">Program Stack</td>
+                <td v-for="v in pcStack">{{v}}</td>
+            </tr>
+        </table>
+        <table cellspacing="0" cellpadding="6" class="stack-table">
+            <tr>
+                <td class="row-head">Data Stack</td>
+                <td v-for="v in stack">{{v}}</td>
+            </tr>
+        </table>
+        <h3>Memory <button @click="openModal()" :disabled="auto">Load</button></h3>
+        <p>Page:
+            <button @click="firstPage()">&lt;&lt;</button>
+            <button @click="prevPage()">&lt;</button>
+            <input type="number" v-model="memPage">
+            <button @click="nextPage()">&gt;</button>
+            <button @click="lastPage()">&gt;&gt;</button>
+        </p>
+        <table cellspacing="0" cellpadding="6" class="mem-table">
+            <tr>
+                <th>0x</th>
+                <th v-for="j in 16">{{(j-1).toString(16)}}</th>
+            </tr>
+            <tr v-for="i in 16">
+                <td class="row-head">0x{{((i-1) + memPage*16).toString(16).padStart(3, '0')}}0</td>
+                <td v-for="j in 16" :class="{'current-pc':(i-1)*16+(j-1)+memPage*256==pc,empty:mem[(i-1)*16+(j-1)+memPage*256]==0}">{{mem[(i-1)*16+(j-1)+memPage*256].toString(16).padStart(4, '0')}}</td>
+            </tr>
+        </table>
+        <div class="modal" v-show="showLoad">
+            <div class="box">
+                <h3>Load Memory</h3>
+                <textarea v-model="loadData" cols="60" rows="10"></textarea>
+                <p v-if="loadError">{{loadError}}</p>
+                <p>
+                    <button @click="load()">Load</button>
+                    <button @click="closeModal()">Close</button>
+                </p>
+            </div>
+        </div>
+    </div>
+    <script src="index.js"></script>
+</body>
+
+</html>
