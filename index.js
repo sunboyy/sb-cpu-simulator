@@ -1,3 +1,12 @@
+var vgaMem = Array(76800).fill(0)
+const vgaInterval = setInterval(() => {
+    const ctx = document.getElementById('vga').getContext('2d')
+    for (let i = 0; i < 76800; i++) {
+        ctx.fillStyle = (vgaMem[i] === 1) ? '#ffffff' : '#000000'
+        ctx.fillRect(i % 320, Math.floor(i / 320), 1, 1)
+    }
+}, 50)
+
 var vm = new Vue({
     el: '#app',
     data: {
@@ -76,6 +85,11 @@ var vm = new Vue({
         storeMemMap(addr, value) {
             if (addr === 0xff) {
                 this.seg = value
+            } else if (addr >= 0xe000 && addr < 0xf2c0) {
+                const index = addr - 0xe000;
+                for (let i = 0; i < 16; i++) {
+                    vgaMem[index * 16 + i] = (value >> (15 - i)) % 2
+                }
             } else {
                 this.mem[addr] = value
             }
@@ -133,6 +147,10 @@ var vm = new Vue({
                         this.reg[this.rd] = ~this.reg[this.rr]
                     } else if (this.aneg) {
                         this.reg[this.rd] = -this.reg[this.rr]
+                    } else if (this.ashl) {
+                        this.reg[this.rd] = this.reg[this.rr] << this.reg[this.rs]
+                    } else if (this.ashr) {
+                        this.reg[this.rd] = this.reg[this.rr] >> this.reg[this.rs]
                     }
                 } else if (this.icmp) {
                     this.flag.lt = this.reg[this.rr] < this.reg[this.rs]
@@ -255,6 +273,12 @@ var vm = new Vue({
         },
         aneg() {
             return this.aluMode === 10
+        },
+        ashl() {
+            return this.aluMode === 11
+        },
+        ashr() {
+            return this.aluMode === 12
         },
         jmp() {
             return this.jmpMode === 0

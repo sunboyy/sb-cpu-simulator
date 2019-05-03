@@ -13,7 +13,8 @@
     <div id="app">
         <h1>CPU Simulator</h1>
         <h3>Out</h3>
-        <p>7 Segment: {{seg.toString().padStart(4, '0')}}</p>
+        <canvas width="320" height="240" class="vga" id="vga"></canvas>
+        <p>7 Segment: {{(seg%10000).toString().padStart(4, '0')}}</p>
         <h3>Control</h3>
         <table>
             <tr>

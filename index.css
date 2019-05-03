@@ -2,6 +2,10 @@ body {
     margin: 8px;
 }
 
+.vga {
+    border: 1px solid #000;
+}
+
 .reg-table tr, .mem-table tr, .stack-table tr {
     background-color: #f8f8f8;
     text-align: center;
