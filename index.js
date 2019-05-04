@@ -1,11 +1,12 @@
 var vgaMem = Array(76800).fill(0)
-const vgaInterval = setInterval(() => {
+function updateVGA() {
     const ctx = document.getElementById('vga').getContext('2d')
     for (let i = 0; i < 76800; i++) {
         ctx.fillStyle = (vgaMem[i] === 1) ? '#ffffff' : '#000000'
         ctx.fillRect(i % 320, Math.floor(i / 320), 1, 1)
     }
-}, 100)
+}
+document.addEventListener('DOMContentLoaded', updateVGA)
 
 var vm = new Vue({
     el: '#app',
@@ -94,6 +95,7 @@ var vm = new Vue({
                 const index = addr - 0xe000
                 for (let i = 0; i < 16; i++) {
                     vgaMem[index * 16 + i] = (value >> (15 - i)) % 2
+                    updateVGA()
                 }
             } else {
                 this.mem[addr] = value
@@ -102,7 +104,7 @@ var vm = new Vue({
         toggleAuto() {
             this.auto = !this.auto
             if (this.auto) {
-                this.autoHandler = setInterval(this.next, 40)
+                this.autoHandler = setInterval(this.next, 50)
             } else {
                 clearInterval(this.autoHandler)
             }
@@ -115,7 +117,7 @@ var vm = new Vue({
                 this.irL = this.mem[this.pc]
                 this.pc = (this.pc + 1) % 65536
             } else if (this.counter === 2) {
-                if (this.iload) {
+                if (this.opcode === 1) {
                     if (this.mimm) {
                         this.reg[this.rr] = this.address
                     } else if (this.mdirect) {
@@ -123,15 +125,15 @@ var vm = new Vue({
                     } else if (this.mregin) {
                         this.reg[this.rr] = this.loadMemMap(this.reg[this.rs])
                     }
-                } else if (this.istore) {
+                } else if (this.opcode === 2) {
                     if (this.mdirect) {
                         this.storeMemMap(this.address, this.reg[this.rr])
                     } else if (this.mregin) {
                         this.storeMemMap(this.reg[this.rs], this.reg[this.rr])
                     }
-                } else if (this.imove) {
+                } else if (this.opcode === 3) {
                     this.reg[this.rr] = this.reg[this.rs]
-                } else if (this.ialu) {
+                } else if (this.opcode === 4) {
                     if (this.aadd) {
                         this.reg[this.rd] = this.reg[this.rr] + this.reg[this.rs]
                     } else if (this.asub) {
@@ -157,25 +159,25 @@ var vm = new Vue({
                     } else if (this.ashr) {
                         this.reg[this.rd] = this.reg[this.rr] >> this.reg[this.rs]
                     }
-                } else if (this.icmp) {
+                } else if (this.opcode === 5) {
                     this.flag.lt = this.reg[this.rr] < this.reg[this.rs]
                     this.flag.eq = this.reg[this.rr] === this.reg[this.rs]
-                } else if (this.ijmp) {
+                } else if (this.opcode === 6) {
                     if (this.shouldJump) {
                         this.pc = this.address
                     }
-                } else if (this.icall) {
+                } else if (this.opcode === 7) {
                     this.pcStack.push(this.pc)
                     this.pc = this.address
-                } else if (this.iret) {
+                } else if (this.opcode === 8) {
                     this.pc = this.pcStack.pop()
-                } else if (this.ibrn) {
+                } else if (this.opcode === 9) {
                     if (this.shouldJump) {
                         this.pc = (this.pc + this.address) & 0xffff
                     }
-                } else if (this.ipush) {
+                } else if (this.opcode === 10) {
                     this.stack.push(this.reg[this.rr])
-                } else if (this.ipop) {
+                } else if (this.opcode === 11) {
                     this.reg[this.rr] = this.stack.pop()
                 }
             }
@@ -206,39 +208,6 @@ var vm = new Vue({
         },
         jmpMode() {
             return (this.irM >> 9) & 0x7
-        },
-        iload() {
-            return this.opcode === 1
-        },
-        istore() {
-            return this.opcode === 2
-        },
-        imove() {
-            return this.opcode === 3
-        },
-        ialu() {
-            return this.opcode === 4
-        },
-        icmp() {
-            return this.opcode === 5
-        },
-        ijmp() {
-            return this.opcode === 6
-        },
-        icall() {
-            return this.opcode === 7
-        },
-        iret() {
-            return this.opcode === 8
-        },
-        ibrn() {
-            return this.opcode === 9
-        },
-        ipush() {
-            return this.opcode === 10
-        },
-        ipop() {
-            return this.opcode === 11
         },
         mimm() {
             return this.memOpt === 0
@@ -312,11 +281,29 @@ var vm = new Vue({
                 (this.jgt && !this.flag.lt && !this.flag.eq) || (this.jge && !this.flag.lt)
         },
         opcodeStr() {
+            if (this.counter < 2) {
+                return ''
+            }
             switch (this.opcode) {
                 case 1: return 'load'
                 case 2: return 'store'
                 case 3: return 'move'
-                case 4: return 'alu'
+                case 4:
+                    switch (this.aluMode) {
+                        case 1: return 'add'
+                        case 2: return 'sub'
+                        case 3: return 'mul'
+                        case 4: return 'div'
+                        case 5: return 'mod'
+                        case 6: return 'and'
+                        case 7: return 'or'
+                        case 8: return 'xor'
+                        case 9: return 'not'
+                        case 10: return 'neg'
+                        case 11: return 'shl'
+                        case 12: return 'shr'
+                        default: return 'unknown alu'
+                    }
                 case 5: return 'cmp'
                 case 6: return 'jmp'
                 case 7: return 'call'
@@ -324,7 +311,7 @@ var vm = new Vue({
                 case 9: return 'brn'
                 case 10: return 'push'
                 case 11: return 'pop'
-                default: return 'unknown'
+                default: return 'unknown op'
             }
         }
     }

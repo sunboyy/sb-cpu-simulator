@@ -20,18 +20,15 @@
             <tr>
                 <td>Program Counter:</td>
                 <td>{{pc.toString(16).padStart(4, '0')}}</td>
-                <td>{{pc.toString(2).padStart(16, '0')}}</td>
                 <td>&nbsp;</td>
             </tr>
             <tr>
                 <td>Counter:</td>
-                <td>&nbsp;</td>
                 <td>{{counter.toString(2).padStart(2, '0')}}</td>
                 <td>&nbsp;</td>
             </tr>
             <tr>
                 <td>Instruction Register:</td>
-                <td>{{irM.toString(16).padStart(4, '0')}}{{irL.toString(16).padStart(4, '0')}}</td>
                 <td>{{irM.toString(2).padStart(16, '0')}} {{irL.toString(2).padStart(16, '0')}}</td>
                 <td>{{opcodeStr}}</td>
             </tr>
