@@ -5,7 +5,7 @@ const vgaInterval = setInterval(() => {
         ctx.fillStyle = (vgaMem[i] === 1) ? '#ffffff' : '#000000'
         ctx.fillRect(i % 320, Math.floor(i / 320), 1, 1)
     }
-}, 50)
+}, 100)
 
 var vm = new Vue({
     el: '#app',
@@ -80,13 +80,18 @@ var vm = new Vue({
             this.stack = []
         },
         loadMemMap(addr) {
-            return this.mem[addr]
+            if (addr >= 0xe000 && addr < 0xf2c0) {
+                const index = addr - 0xe000
+                return parseInt(vgaMem.slice(index * 16, index * 16 + 16).join(''), 2)
+            } else {
+                return this.mem[addr]
+            }
         },
         storeMemMap(addr, value) {
             if (addr === 0xff) {
                 this.seg = value
             } else if (addr >= 0xe000 && addr < 0xf2c0) {
-                const index = addr - 0xe000;
+                const index = addr - 0xe000
                 for (let i = 0; i < 16; i++) {
                     vgaMem[index * 16 + i] = (value >> (15 - i)) % 2
                 }
@@ -134,7 +139,7 @@ var vm = new Vue({
                     } else if (this.amul) {
                         this.reg[this.rd] = this.reg[this.rr] * this.reg[this.rs]
                     } else if (this.adiv) {
-                        this.reg[this.rd] = this.reg[this.rr] / this.reg[this.rs]
+                        this.reg[this.rd] = Math.floor(this.reg[this.rr] / this.reg[this.rs])
                     } else if (this.amod) {
                         this.reg[this.rd] = this.reg[this.rr] % this.reg[this.rs]
                     } else if (this.aand) {
@@ -305,6 +310,22 @@ var vm = new Vue({
             return this.jmp || (this.jeq && this.flag.eq) || (this.jne && !this.flag.eq) ||
                 (this.jlt && this.flag.lt) || (this.jle && (this.flag.lt || this.flag.eq)) ||
                 (this.jgt && !this.flag.lt && !this.flag.eq) || (this.jge && !this.flag.lt)
+        },
+        opcodeStr() {
+            switch (this.opcode) {
+                case 1: return 'load'
+                case 2: return 'store'
+                case 3: return 'move'
+                case 4: return 'alu'
+                case 5: return 'cmp'
+                case 6: return 'jmp'
+                case 7: return 'call'
+                case 8: return 'ret'
+                case 9: return 'brn'
+                case 10: return 'push'
+                case 11: return 'pop'
+                default: return 'unknown'
+            }
         }
     }
 })
