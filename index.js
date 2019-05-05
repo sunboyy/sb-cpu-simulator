@@ -89,14 +89,14 @@ var vm = new Vue({
             }
         },
         storeMemMap(addr, value) {
-            if (addr === 0xff) {
+            if (addr === 0xffff) {
                 this.seg = value
             } else if (addr >= 0xe000 && addr < 0xf2c0) {
                 const index = addr - 0xe000
                 for (let i = 0; i < 16; i++) {
                     vgaMem[index * 16 + i] = (value >> (15 - i)) % 2
-                    updateVGA()
                 }
+                updateVGA()
             } else {
                 this.mem[addr] = value
             }
