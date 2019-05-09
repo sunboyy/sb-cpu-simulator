@@ -89,8 +89,18 @@ var vm = new Vue({
             }
         },
         storeMemMap(addr, value) {
-            if (addr === 0xffff) {
+            if (addr === 0xfff8) {
+                this.seg = ((this.seg >> 4) << 4) + (value % 16)
+            } else if (addr === 0xfff9) {
+                this.seg = ((this.seg >> 8) << 8) + ((value % 16) << 4) + this.seg % 0x10
+            } else if (addr === 0xfffa) {
+                this.seg = ((this.seg >> 12) << 12) + ((value % 16) << 8) + this.seg % 0x100
+            } else if (addr === 0xfffb) {
+                this.seg = ((value % 16) << 12) + this.seg % 0x1000
+            } else if (addr === 0xfffe) {
                 this.seg = value
+            } else if (addr === 0xffff) {
+                this.seg = parseInt(value.toString(), 16)
             } else if (addr >= 0xe000 && addr < 0xf2c0) {
                 const index = addr - 0xe000
                 for (let i = 0; i < 16; i++) {
