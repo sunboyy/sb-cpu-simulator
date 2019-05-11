@@ -7,6 +7,11 @@ function updateVGA() {
     }
 }
 document.addEventListener('DOMContentLoaded', updateVGA)
+function updatePixel(pixel) {
+    const ctx = document.getElementById('vga').getContext('2d')
+    ctx.fillStyle = (vgaMem[pixel] === 1) ? '#ffffff' : '#000000'
+    ctx.fillRect(pixel % 320, Math.floor(pixel / 320), 1, 1)
+}
 
 var vm = new Vue({
     el: '#app',
@@ -105,8 +110,8 @@ var vm = new Vue({
                 const index = addr - 0xe000
                 for (let i = 0; i < 16; i++) {
                     vgaMem[index * 16 + i] = (value >> (15 - i)) % 2
+                    updatePixel(index * 16 + i)
                 }
-                updateVGA()
             } else {
                 this.mem[addr] = value
             }
